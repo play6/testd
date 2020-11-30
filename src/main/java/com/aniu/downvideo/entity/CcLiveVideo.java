@@ -29,9 +29,24 @@ public class CcLiveVideo implements Serializable {
      */
     private String ccContentId;
 
-    private String startTime;
+    // roomid、recordid、liveid、roomtitie、replayUrl、recordstatus、
+    // offlinePackageSize、downloadUrl、videotime（yyyy-MM-dd）
+    private String liveId;
 
-    private String endTime;
+    private String roomTitie;
+
+    private String replayUrl;
+
+    private Integer recordStatus;
+
+    private Integer offlinePackageSize;
+
+    private String downloadUrl;
+
+    private String videoTime; // （yyyy-MM-dd）
+    // 创建时间
+    private Date createTime;
+
     /**
      * 更新时间
      */

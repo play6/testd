@@ -339,17 +339,24 @@ public class DownloadUtils {
             }
 
             // TODO 换了个接口需要重新保存字段
+            Date now = new Date();
             for (CcLive live : lives) {
                 String startTime = live.getStartTime();
                 // String endTime = live.getEndTime();
                 if(StringUtils.isBlank(startTime) ) {
                     continue;
                 }
+                // roomid、recordid、liveid、roomtitie、replayUrl、recordstatus、
+                // offlinePackageSize、downloadUrl、videotime（yyyy-MM-dd）
                 CcLiveVideo ccLiveVideo = new CcLiveVideo();
                 ccLiveVideo.setRoomId(s);
                 ccLiveVideo.setCcContentId(live.getId());
-                ccLiveVideo.setStartTime(startTime);
-
+                ccLiveVideo.setLiveId(live.getLiveId());
+                ccLiveVideo.setRoomTitie(live.getTitle());
+                ccLiveVideo.setReplayUrl(live.getReplayUrl());
+                ccLiveVideo.setRecordStatus(live.getRecordStatus());
+                ccLiveVideo.setVideoTime(startTime.substring(0,10));
+                ccLiveVideo.setCreateTime(now);
                 ccLiveVideo.setDownloadStatus(0);
                 result.add(ccLiveVideo);
             }
@@ -376,21 +383,6 @@ public class DownloadUtils {
         return result;
 
 
-//        Map<String, String> queryMap1 = new HashMap<String, String>();
-//        queryMap1.put("userid", "7CEFDE16F4DC35B6");
-//        queryMap1.put("recordid", "BAAC5567D83244FF");
-//        long time1 = Calendar.getInstance().getTime().getTime();
-//        String url1 = "http://api.csslcloud.net/api/v2/record/search?" + APIServiceFunction.createHashedQueryString(queryMap1,
-//                time1, "aGU8q3Z8CUlVQE4Zhy0CmgTwIimyrXDR");
-//        HttpGet httpGet1 = new HttpGet(url1);
-//        CloseableHttpClient httpclient1 = HttpClients.createDefault();
-//        CloseableHttpResponse httpResponse1 = httpclient1.execute(httpGet1);
-//        String result1 = "";
-//        if (httpResponse.getStatusLine().getStatusCode() == 200) {
-//            //请求体内容
-//            result1 = EntityUtils.toString(httpResponse1.getEntity(), "UTF-8");
-//        }
-//        return result1;
     }
 
     private String getLiveDownloadURLByReplayId(String replayId) throws IOException {
@@ -448,13 +440,14 @@ public class DownloadUtils {
             LOG.info("调用CC直播列表的结果是-->" + jsonResult);
 
             CcLiveList ccLiveList = gson.fromJson(jsonResult, CcLiveList.class);
-            List<CcLive> lives = ccLiveList.getLives();
+            List<CcLive> lives = ccLiveList.getRecords();
             if (CollectionUtils.isEmpty(lives)) {
                 LOG.info(s + "-->当前roomId中无直播视频ccContentId");
                 continue;
             }
 
             LiveVideoUniqueKey liveVideoUniqueKey;
+            Date now = new Date();
             for (CcLive live : lives) {
                 String ccContentId = live.getId();
                 liveVideoUniqueKey = new LiveVideoUniqueKey(s, ccContentId);
@@ -463,15 +456,18 @@ public class DownloadUtils {
                 }
 
                 String startTime = live.getStartTime();
-                String endTime = live.getEndTime();
-                if(StringUtils.isBlank(startTime) || StringUtils.isBlank(endTime)) {
+                if(StringUtils.isBlank(startTime)) {
                     continue;
                 }
                 CcLiveVideo ccLiveVideo = new CcLiveVideo();
                 ccLiveVideo.setRoomId(s);
-                ccLiveVideo.setCcContentId(ccContentId);
-                ccLiveVideo.setStartTime(startTime);
-                ccLiveVideo.setEndTime(endTime);
+                ccLiveVideo.setCcContentId(live.getId());
+                ccLiveVideo.setLiveId(live.getLiveId());
+                ccLiveVideo.setRoomTitie(live.getTitle());
+                ccLiveVideo.setReplayUrl(live.getReplayUrl());
+                ccLiveVideo.setRecordStatus(live.getRecordStatus());
+                ccLiveVideo.setVideoTime(startTime.substring(0,10));
+                ccLiveVideo.setCreateTime(now);
                 ccLiveVideo.setDownloadStatus(0);
                 result.add(ccLiveVideo);
             }
@@ -479,52 +475,59 @@ public class DownloadUtils {
         return result;
     }
 
-    public void downloadLiveVideo() {
+
+
+
+
+    public void downloadLiveVideo() throws IOException {
 
         // 从数据库获取未下载的直播间的视频ccId
         // 获取所有的ccID
-        List<CcLiveVideo> liveList = aniuCcvideoDownloadStatusMapper.getLiveList(3);
+        List<CcLiveVideo> liveList = aniuCcvideoDownloadStatusMapper.getLiveList(28);
         if (CollectionUtils.isEmpty(liveList)) {
             throw new RuntimeException("live no records...");
         }
         for (CcLiveVideo live : liveList) {
             String ccId = live.getCcContentId();
+            String videoTime = live.getVideoTime();
             String roomId = live.getRoomId();
-            String startTime = live.getStartTime();
-            if(StringUtils.isBlank(ccId) || StringUtils.isBlank(roomId)) {
+            if (StringUtils.isBlank(ccId)) {
                 continue;
             }
 
-
-            try {
-                doDownloadLiveVideo(ccId, saveLiveDir + "/" + roomId,null,startTime.substring(0,10));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            // 下载成功后根据ccId更新数据库下载状态
-            aniuCcvideoDownloadStatusMapper.updateLiveStatus(ccId,roomId);
-            LOG.info(ccId + "-->Live视频已下载完成&&&Live视频下载更新状态表success。。。");
-
-
-
-            /*consumerQueueThreadPool.execute(new Runnable() {
+            consumerQueueThreadPool.execute(new Runnable() {
                 @Override
                 public void run() {
+                    boolean b;
                     try {
-                        downloadCCVideo(ccId, saveLiveDir + "/" + roomId,null,startTime.substring(0,10));
-                        // 下载成功后根据ccId更新数据库下载状态
-                        aniuCcvideoDownloadStatusMapper.updateLiveStatus(ccId,roomId);
-                        LOG.info(ccId + "-->Live视频已下载完成&&&Live视频下载更新状态表success。。。");
+                        b = doDownloadLiveVideo(ccId, saveLiveDir + "/" + roomId, ccId + "_" + videoTime);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
+                    // 下载成功后根据ccId更新数据库下载状态
+                    if (b) {
+                        // 下载成功后根据ccId更新数据库下载状态
+                        aniuCcvideoDownloadStatusMapper.updateLiveStatus(ccId, roomId);
+                        LOG.info(ccId + "-->Live视频已下载完成&&&Live视频下载更新状态表success。。。");
+                    } else {
+                        // 失败 退出当前循环
+                        LOG.info(ccId + "-->Live视频已下载失败 download fail。。。");
+                    }
+
                 }
-            });*/
-            // break;
+            });
+
         }
     }
 
-    public boolean doDownloadLiveVideo(String reminisceId,String saveDir,String fileName) {
+
+
+
+
+
+
+
+    public boolean doDownloadLiveVideo(String reminisceId,String saveDir,String fileName) throws IOException {
 
         if (StringUtils.isBlank(reminisceId)) {
             throw new RuntimeException("缺少ccContentId...");
@@ -534,11 +537,12 @@ public class DownloadUtils {
         }
         Map<String, String> params = new HashMap();// 需要传递的参数
         params.put("userid", "7CEFDE16F4DC35B6");
-        params.put("videoid", ccContentId);
-        String salt = "zeDnFNuXUwqE0QVzNdJ4aRH4YCevPjtt"; // 加盐
+        params.put("recordid", reminisceId);
+        // String salt = "zeDnFNuXUwqE0QVzNdJ4aRH4YCevPjtt"; // 加盐
+        String salt = "aGU8q3Z8CUlVQE4Zhy0CmgTwIimyrXDR";
         long time = System.currentTimeMillis(); // 当前时间戳
         String str = createHashedQueryString(params, time, salt);// 生成http请求参数
-        String requestUrl = "http://spark.bokecc.com/api/video/original?" + str;
+        String requestUrl = "http://api.csslcloud.net/api/v2/record/search?" + str;
         HttpGet httpGet = new HttpGet(requestUrl);
         CloseableHttpClient httpclient = HttpClients.createDefault();
         CloseableHttpResponse httpResponse = httpclient.execute(httpGet);
@@ -553,17 +557,14 @@ public class DownloadUtils {
         if (result.contains("error")) {
             return false;
         }
+        LOG.info("获取单个回放信息返回结果是--->" + result);
         // 从返回结果中搂出下载url
         JsonObject jsonObject = new JsonParser().parse(result).getAsJsonObject();
-        String downloadUrl = jsonObject.get("video").getAsJsonObject().get("url").getAsString();
+        String downloadUrl = jsonObject.get("record").getAsJsonObject().get("downloadUrl").getAsString();
         int i = downloadUrl.indexOf("?");
         String suffix = downloadUrl.substring(i-3,i);
         LOG.info("-->视频保存路径是。。。" + saveDir);
-        if(StringUtils.isNotBlank(date)) {
-            downloadByNIO2(downloadUrl, saveDir, ccContentId + "_" + date + "." + suffix);
-        }else if(null != vid) {
-            downloadByNIO2(downloadUrl, saveDir, vid + "." + suffix);
-        }
+        downloadByNIO2(downloadUrl, saveDir, reminisceId + "_" +  "." + suffix);
         return true;
 
     }

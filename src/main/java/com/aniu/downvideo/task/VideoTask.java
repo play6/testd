@@ -52,7 +52,7 @@ public class VideoTask {
     @Scheduled(cron="0 0 2 * * ?")
     public void downloadVideos() throws IOException, InvalidFormatException {
         LOG.info("downloadVideos()下载视频文件开始了......");
-        downloadUtils.downloadCcVideo(35);
+        downloadUtils.downloadCcVideo(28);
     }
 
     // @Scheduled(cron="0 20 13 24 11 ?")
@@ -67,18 +67,20 @@ public class VideoTask {
     public void saveLiveVideoDownloadStatus() throws IOException {
         LOG.info("downloadLiveVideo()下载直播视频文件start了......");
         downloadUtils.saveLiveVideoDownloadStatus();
-    }
+    } //  TODO 第一次根据房间id保存直播回看记录到数据库  完成
+
+
 
     // 增量根据房间id保存数据到数据库[每天执行]
      @Scheduled(cron="0 21 14 * * ?")
     public void addLiveVideoIncrementally() throws IOException {
         LOG.info("addLiveVideoIncrementally()保存直播视频数据到数据库start了......");
         downloadUtils.addLiveVideoIncrementally();
-    }
+    } //  TODO 增量根据房间id保存数据到数据库[每天执行]  完成
 
     // 下载直播间的视频到Linux服务器
-    @Scheduled(cron="0 30 17 26 11 ?")
-    public void downloadLiveVideo() {
+    @Scheduled(cron="50 49 13 30 11 ?")
+    public void downloadLiveVideo() throws IOException {
         LOG.info("downloadLiveVideo()下载直播视频文件到Linux start了......");
         downloadUtils.downloadLiveVideo();
     }

@@ -16,10 +16,9 @@
         <result column="room_id" property="roomId" />
         <result column="cc_content_id" property="ccContentId" />
 
-        <result column="start_time" property="startTime" />
-        <result column="end_time" property="endTime" />
         <result column="update_time" property="updateTime" />
 
+        <result column="video_time" property="videoTime" />
 
         <result column="standby1" property="standby1" />
         <result column="download_status" property="downloadStatus" />
@@ -38,9 +37,13 @@
 
 
     <insert id="saveCcLiveVideos">
-        insert into aniu_livevideo_download_status(room_id, cc_content_id, start_time, end_time, download_status) values
+        insert into aniu_livevideo_download_status(room_id, cc_content_id,
+        live_id,room_title,replay_url,record_status,video_time,
+        create_time,download_status) values
         <foreach collection="list" item="item" index="index" separator=",">
-            (#{item.roomId}, #{item.ccContentId}, #{item.startTime}, #{item.endTime}, 0)
+            (#{item.roomId}, #{item.ccContentId},
+            #{item.liveId},#{item.roomTitle},#{item.replayUrl},#{item.recordStatus},#{item.videoTime},
+            #{item.createTime}, 0)
         </foreach>
     </insert>
 
@@ -54,7 +57,7 @@
         FROM
           aniu_livevideo_download_status
         WHERE download_status != 1
-        ORDER BY start_time ASC,id ASC
+        ORDER BY id ASC
         LIMIT #{num}
     </select>
 
