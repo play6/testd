@@ -52,7 +52,7 @@ public class VideoTask {
     @Scheduled(cron="0 0 2 * * ?")
     public void downloadVideos() throws IOException, InvalidFormatException {
         LOG.info("downloadVideos()下载视频文件开始了......");
-        downloadUtils.downloadCcVideo(80);
+        downloadUtils.downloadCcVideo(35);
     }
 
     // @Scheduled(cron="0 20 13 24 11 ?")
