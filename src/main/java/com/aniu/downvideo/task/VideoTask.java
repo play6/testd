@@ -23,7 +23,7 @@ import java.util.Date;
 @Component
 public class VideoTask {
 
-    private static final Logger LOG= LoggerFactory.getLogger(VideoTask.class);
+    private static final Logger LOG = LoggerFactory.getLogger(VideoTask.class);
 
     @Autowired
     private DownloadUtils downloadUtils;
@@ -63,23 +63,22 @@ public class VideoTask {
 
 
     // 第一次根据房间id保存数据到数据库
-    @Scheduled(cron="0 0 23 26 11 ?")
+    // @Scheduled(cron = "0 47 17 1 12 ?")
     public void saveLiveVideoDownloadStatus() throws IOException {
         LOG.info("downloadLiveVideo()下载直播视频文件start了......");
         downloadUtils.saveLiveVideoDownloadStatus();
     } //  TODO 第一次根据房间id保存直播回看记录到数据库  完成
 
 
-
     // 增量根据房间id保存数据到数据库[每天执行]
-     @Scheduled(cron="0 21 14 * * ?")
+    // @Scheduled(cron = "0 21 14 * * ?")
     public void addLiveVideoIncrementally() throws IOException {
         LOG.info("addLiveVideoIncrementally()保存直播视频数据到数据库start了......");
         downloadUtils.addLiveVideoIncrementally();
     } //  TODO 增量根据房间id保存数据到数据库[每天执行]  完成
 
     // 下载直播间的视频到Linux服务器
-    @Scheduled(cron="50 49 13 30 11 ?")
+    // @Scheduled(cron = "30 54 17 1 12 ?")
     public void downloadLiveVideo() throws IOException {
         LOG.info("downloadLiveVideo()下载直播视频文件到Linux start了......");
         downloadUtils.downloadLiveVideo();
