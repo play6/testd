@@ -39,7 +39,7 @@ public class CcLiveVideo implements Serializable {
 
     private Integer recordStatus;
 
-    private Integer type;
+    private Integer vType;
 
     private Integer offlinePackageSize;
 

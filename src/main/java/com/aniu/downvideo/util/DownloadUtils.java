@@ -392,7 +392,7 @@ public class DownloadUtils {
                 ccLiveVideo.setReplayUrl(live.getReplayUrl());
                 ccLiveVideo.setRecordStatus(live.getRecordStatus());
                 // 2表示近3天直播回看课程
-                ccLiveVideo.setType(2);
+                ccLiveVideo.setVType(2);
                 ccLiveVideo.setVideoTime(ymdStartTime);
                 ccLiveVideo.setCreateTime(now);
                 ccLiveVideo.setDownloadStatus(0);
@@ -504,7 +504,7 @@ public class DownloadUtils {
                 ccLiveVideo.setRoomTitle(live.getTitle());
                 ccLiveVideo.setReplayUrl(live.getReplayUrl());
                 ccLiveVideo.setRecordStatus(live.getRecordStatus());
-                ccLiveVideo.setType(2);
+                ccLiveVideo.setVType(2);
                 ccLiveVideo.setVideoTime(startTime.substring(0,10));
                 ccLiveVideo.setCreateTime(now);
                 ccLiveVideo.setDownloadStatus(0);
@@ -725,7 +725,7 @@ public class DownloadUtils {
             ccLiveVideo.setRoomTitle(live.getTitle());
             ccLiveVideo.setReplayUrl(live.getReplayUrl());
             ccLiveVideo.setRecordStatus(live.getRecordStatus());
-            ccLiveVideo.setType(1);
+            ccLiveVideo.setVType(1);
             ccLiveVideo.setVideoTime(startTimeStr);
             ccLiveVideo.setCreateTime(now);
             ccLiveVideo.setDownloadStatus(0);
