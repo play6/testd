@@ -17,6 +17,7 @@
         <result column="cc_content_id" property="ccContentId" />
 
         <result column="update_time" property="updateTime" />
+        <result column="room_title" property="roomTitle"/>
 
         <result column="video_time" property="videoTime" />
 
@@ -32,17 +33,17 @@
     </insert>
 
     <select id="getAllRoomId" resultType="string">
-        SELECT room_id FROM aniu_cc_room where status = 0
+        SELECT room_id FROM aniu_cc_room where status = 0 order by id  desc
     </select>
 
 
     <insert id="saveCcLiveVideos">
         insert into aniu_livevideo_download_status(room_id, cc_content_id,
-        live_id,room_title,replay_url,record_status,video_time,
+        live_id,room_title,replay_url,record_status,TYPE ,video_time,
         create_time,download_status) values
         <foreach collection="list" item="item" index="index" separator=",">
             (#{item.roomId}, #{item.ccContentId},
-            #{item.liveId},#{item.roomTitle},#{item.replayUrl},#{item.recordStatus},#{item.videoTime},
+            #{item.liveId},#{item.roomTitle},#{item.replayUrl},#{item.recordStatus},#{item.type} ,#{item.videoTime},
             #{item.createTime}, 0)
         </foreach>
     </insert>

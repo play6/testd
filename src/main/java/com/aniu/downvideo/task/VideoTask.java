@@ -55,11 +55,43 @@ public class VideoTask {
         downloadUtils.downloadCcVideo(28);
     }
 
-    // @Scheduled(cron="0 20 13 24 11 ?")
-    public void testDownloadVideos() throws IOException, InvalidFormatException {
-        LOG.info("downloadVideos()下载视频文件开始了......");
-        downloadUtils.downloadCcVideo(6);
+    /**
+     * 保存私密课
+     */
+    @Scheduled(cron="0 0 23 14 12 ?")
+    public void savePrivateClass() throws IOException {
+        LOG.info("/savePrivateClass()保存私密课数据开始了......");
+        downloadUtils.savePrivateClass();
     }
+
+    /**
+     * 增量保存私密课
+     * @throws IOException
+     */
+    @Scheduled(cron="0 0 1 * * ?")
+    public void savePrivateClassIncrementally() throws IOException {
+        LOG.info("/savePrivateClassIncrementally()增量添加私密课数据开始了......start");
+        downloadUtils.savePrivateClassIncrementally();
+    }
+
+
+
+
+
+    // TODO 下载私密课暂不打开
+//    @Scheduled(cron="30 41 11 * * ?")
+//    public void downloadPrivateClass() {
+//        LOG.info("downloadPrivateClass()下载私密课数据开始了......");
+//        downloadUtils.downloadPrivateClass();
+//    }
+
+
+
+    // @Scheduled(cron="0 20 13 24 11 ?")
+//    public void testDownloadVideos() throws IOException, InvalidFormatException {
+//        LOG.info("downloadVideos()下载视频文件开始了......");
+//        downloadUtils.downloadCcVideo(6);
+//    }
 
 
     // 第一次根据房间id保存数据到数据库

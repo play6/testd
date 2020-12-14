@@ -1,6 +1,7 @@
 package com.aniu.downvideo.util;
 
 
+import com.aniu.downvideo.config.Constant;
 import com.aniu.downvideo.entity.AniuCcvideoDownloadStatus;
 import com.aniu.downvideo.entity.CcLiveVideo;
 import com.aniu.downvideo.entity.LiveVideoUniqueKey;
@@ -45,6 +46,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -67,6 +70,9 @@ public class DownloadUtils {
 
     @Value("${downvideo.zhibo}")
     private String saveLiveDir;
+
+    @Value("${downvideo.simike}")
+    private String simikeDir;
 
 
     @Resource(name = "consumerQueueThreadPool")
@@ -310,10 +316,27 @@ public class DownloadUtils {
         // 获取所有的roomId;
         List<String> roomIds = aniuCcvideoDownloadStatusMapper.getAllRoomId();
         Set<String> roomIdSet = new HashSet<>(roomIds);
+
+        // 排除私密课的房间号
+        String id1 = Constant.PRIVATE_CLASS_ROOM_ID1;
+        String id2 = Constant.PRIVATE_CLASS_ROOM_ID2;
+        String id3 = Constant.PRIVATE_CLASS_ROOM_ID3;
+        String id4 = Constant.PRIVATE_CLASS_ROOM_ID4;
+        String id5 = Constant.PRIVATE_CLASS_ROOM_ID5;
+        String id6 = Constant.PRIVATE_CLASS_ROOM_ID6;
+        roomIdSet.remove(id1);
+        roomIdSet.remove(id2);
+        roomIdSet.remove(id3);
+        roomIdSet.remove(id4);
+        roomIdSet.remove(id5);
+        roomIdSet.remove(id6);
         // 根据roomId请求cc的接口获取ccContentId
         List<CcLiveVideo> ccLiveVideos = getLiveVideoByRoomIds(roomIdSet);
 
         // 将多个CcLiveVideo保存到数据库中
+        if(CollectionUtils.isEmpty(ccLiveVideos)) {
+            throw new RuntimeException("no videos...");
+        }
         aniuCcvideoDownloadStatusMapper.saveCcLiveVideos(ccLiveVideos);
 
         LOG.info("save to database successfully[CC直播列表保存到数据库成功]。。。。。。");
@@ -340,22 +363,37 @@ public class DownloadUtils {
 
             // TODO 换了个接口需要重新保存字段
             Date now = new Date();
+            final Calendar cal = Calendar.getInstance();
+            cal.add(Calendar.DATE,-1);
+            Date yesterday = cal.getTime();
+            final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+            String yesterStr = dateFormat.format(yesterday);
+
             for (CcLive live : lives) {
                 String startTime = live.getStartTime();
                 // String endTime = live.getEndTime();
                 if(StringUtils.isBlank(startTime) ) {
                     continue;
                 }
+
+                // 只有昨天和前天的才需要下载
+                String ymdStartTime = startTime.substring(0,10);
+                if (!yesterStr.equals(ymdStartTime) /*&& !theDayBefYesStr.equals(ymdStartTime)*/) {
+                    continue;
+                }
+
                 // roomid、recordid、liveid、roomtitie、replayUrl、recordstatus、
                 // offlinePackageSize、downloadUrl、videotime（yyyy-MM-dd）
                 CcLiveVideo ccLiveVideo = new CcLiveVideo();
                 ccLiveVideo.setRoomId(s);
                 ccLiveVideo.setCcContentId(live.getId());
                 ccLiveVideo.setLiveId(live.getLiveId());
-                ccLiveVideo.setRoomTitie(live.getTitle());
+                ccLiveVideo.setRoomTitle(live.getTitle());
                 ccLiveVideo.setReplayUrl(live.getReplayUrl());
                 ccLiveVideo.setRecordStatus(live.getRecordStatus());
-                ccLiveVideo.setVideoTime(startTime.substring(0,10));
+                // 2表示近3天直播回看课程
+                ccLiveVideo.setType(2);
+                ccLiveVideo.setVideoTime(ymdStartTime);
                 ccLiveVideo.setCreateTime(now);
                 ccLiveVideo.setDownloadStatus(0);
                 result.add(ccLiveVideo);
@@ -463,9 +501,10 @@ public class DownloadUtils {
                 ccLiveVideo.setRoomId(s);
                 ccLiveVideo.setCcContentId(live.getId());
                 ccLiveVideo.setLiveId(live.getLiveId());
-                ccLiveVideo.setRoomTitie(live.getTitle());
+                ccLiveVideo.setRoomTitle(live.getTitle());
                 ccLiveVideo.setReplayUrl(live.getReplayUrl());
                 ccLiveVideo.setRecordStatus(live.getRecordStatus());
+                ccLiveVideo.setType(2);
                 ccLiveVideo.setVideoTime(startTime.substring(0,10));
                 ccLiveVideo.setCreateTime(now);
                 ccLiveVideo.setDownloadStatus(0);
@@ -564,13 +603,174 @@ public class DownloadUtils {
         int i = downloadUrl.indexOf("?");
         String suffix = downloadUrl.substring(i-3,i);
         LOG.info("-->视频保存路径是。。。" + saveDir);
-        downloadByNIO2(downloadUrl, saveDir, reminisceId + "_" +  "." + suffix);
+        downloadByNIO2(downloadUrl, saveDir, fileName +  "." + suffix);
         return true;
 
     }
 
 
+    /**
+     * 保存私密课到数据库
+     */
+    public void savePrivateClass() throws IOException {
+
+
+        String id1 = Constant.PRIVATE_CLASS_ROOM_ID1;
+        String id2 = Constant.PRIVATE_CLASS_ROOM_ID2;
+        String id3 = Constant.PRIVATE_CLASS_ROOM_ID3;
+        String id4 = Constant.PRIVATE_CLASS_ROOM_ID4;
+        String id5 = Constant.PRIVATE_CLASS_ROOM_ID5;
+        String id6 = Constant.PRIVATE_CLASS_ROOM_ID6;
+        // 根据房间id获取回看列表
+        List<CcLiveVideo> result = new ArrayList<>();
+        addPrivateClassByRoomId(id1, result,1);
+        addPrivateClassByRoomId(id2, result,1);
+        addPrivateClassByRoomId(id3, result,1);
+        addPrivateClassByRoomId(id4, result,1);
+        addPrivateClassByRoomId(id5, result,1);
+        addPrivateClassByRoomId(id6, result,1);
+        // 插入到数据库
+
+        // 将多个CcLiveVideo保存到数据库中
+        aniuCcvideoDownloadStatusMapper.saveCcLiveVideos(result);
+        LOG.info("save private class to database successfully[私密课视频列表保存到数据库成功]。。。。。。");
+    }
 
 
 
+    public void savePrivateClassIncrementally() throws IOException {
+
+
+        String id1 = Constant.PRIVATE_CLASS_ROOM_ID1;
+        String id2 = Constant.PRIVATE_CLASS_ROOM_ID2;
+        String id3 = Constant.PRIVATE_CLASS_ROOM_ID3;
+        String id4 = Constant.PRIVATE_CLASS_ROOM_ID4;
+        String id5 = Constant.PRIVATE_CLASS_ROOM_ID5;
+        String id6 = Constant.PRIVATE_CLASS_ROOM_ID6;
+        // 根据房间id获取回看列表
+        List<CcLiveVideo> result = new ArrayList<>();
+        addPrivateClassByRoomId(id1, result,2);
+        addPrivateClassByRoomId(id2, result,2);
+        addPrivateClassByRoomId(id3, result,2);
+        addPrivateClassByRoomId(id4, result,2);
+        addPrivateClassByRoomId(id5, result,2);
+        addPrivateClassByRoomId(id6, result,2);
+        // 插入到数据库
+
+        // 将多个CcLiveVideo保存到数据库中
+        if(CollectionUtils.isNotEmpty(result)) {
+            aniuCcvideoDownloadStatusMapper.saveCcLiveVideos(result);
+        }
+        LOG.info("save to database successfully[私密课视频增量添加到数据库成功]。。。。。。");
+    }
+
+
+    /**
+     * 当i=1时表示第一次将私密课写入数据库，当i=2时表示为后续增量的写入
+     * @param roomId 房间id
+     * @param result 回看列表
+     * @param i 调用来源
+     * @throws IOException
+     */
+    private void addPrivateClassByRoomId(String roomId,List<CcLiveVideo> result,Integer i) throws IOException {
+        String recordList1 = getJsonFromCCByRoomId(roomId);
+        LOG.info("私密课回看列表是--->{}", recordList1);
+        Gson gson = new Gson();
+        CcLiveList ccLiveList1 = gson.fromJson(recordList1, CcLiveList.class);
+        List<CcLive> lives = ccLiveList1.getRecords();
+        if(null == i) {
+            LOG.info("调用来源不可为空...Param Error...");
+            return;
+        }
+        if (CollectionUtils.isEmpty(lives)) {
+            LOG.info(roomId + "-->当前roomId中无直播视频ccContentId");
+            return;
+        }
+
+        // TODO 换了个接口需要重新保存字段
+        Date now = new Date();
+
+        final Calendar cal = Calendar.getInstance();
+        Date today = cal.getTime();
+        final DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        String todayStr = dateFormat.format(today);
+
+        cal.add(Calendar.DATE,-1);
+        Date yesterday = cal.getTime();
+        String yesterStr = dateFormat.format(yesterday);
+
+        for (CcLive live : lives) {
+            String startTime = live.getStartTime();
+            String startTimeStr = startTime.substring(0,10);
+            // String endTime = live.getEndTime();
+            // 第一次只保存今天之前的数据，不保存今天的数据
+            if (StringUtils.isBlank(startTimeStr)) {
+                continue;
+            }
+            if (1 == i) {
+                if (todayStr.equals(startTimeStr)) {
+                    continue;
+                }
+            }else if (2 == i) {
+                if (!yesterStr.equals(startTimeStr)) {
+                    continue;
+                }
+            }
+            // roomid、recordid、liveid、roomtitie、replayUrl、recordstatus、
+            // offlinePackageSize、downloadUrl、videotime（yyyy-MM-dd）
+            CcLiveVideo ccLiveVideo = new CcLiveVideo();
+            ccLiveVideo.setRoomId(roomId);
+            ccLiveVideo.setCcContentId(live.getId());
+            ccLiveVideo.setLiveId(live.getLiveId());
+            ccLiveVideo.setRoomTitle(live.getTitle());
+            ccLiveVideo.setReplayUrl(live.getReplayUrl());
+            ccLiveVideo.setRecordStatus(live.getRecordStatus());
+            ccLiveVideo.setType(1);
+            ccLiveVideo.setVideoTime(startTimeStr);
+            ccLiveVideo.setCreateTime(now);
+            ccLiveVideo.setDownloadStatus(0);
+            result.add(ccLiveVideo);
+        }
+    }
+
+    /**
+     * 下载私密课视频
+     */
+    public void downloadPrivateClass() {
+
+        // 获取所有的ccID   // List<Course> courses = read("abc.xlsx");
+        List<CcLiveVideo> liveList = aniuCcvideoDownloadStatusMapper.getLiveList(5);
+        if (CollectionUtils.isEmpty(liveList)) {
+            throw new RuntimeException("Private courses no records...");
+        }
+        for (CcLiveVideo course : liveList) {
+            String ccId = course.getCcContentId();
+            String roomId = course.getRoomId();
+            String videoTime = course.getVideoTime();
+            String roomTitle = course.getRoomTitle();
+            consumerQueueThreadPool.execute(new Runnable() {
+                @Override
+                public void run() {
+                    boolean b;
+                    try {
+                        String name = videoTime + "_" + roomTitle+ "_" + UUID.randomUUID().toString().toUpperCase().substring(0,2);
+                        b = doDownloadLiveVideo(ccId, simikeDir, name);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    // 下载成功后根据ccId更新数据库下载状态
+                    if (b) {
+                        // 下载成功后根据ccId更新数据库下载状态
+                        aniuCcvideoDownloadStatusMapper.updateLiveStatus(ccId, roomId);
+                        LOG.info(ccId + "-->私密课视频已下载完成&&&私密课视频下载更新状态表success。。。");
+                    } else {
+                        // 失败 退出当前循环
+                        LOG.info(ccId + "-->私密课视频已下载失败 download fail。。。");
+                    }
+
+                }
+            });
+        }
+
+    }
 }

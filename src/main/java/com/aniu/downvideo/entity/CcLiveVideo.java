@@ -33,11 +33,13 @@ public class CcLiveVideo implements Serializable {
     // offlinePackageSize、downloadUrl、videotime（yyyy-MM-dd）
     private String liveId;
 
-    private String roomTitie;
+    private String roomTitle;
 
     private String replayUrl;
 
     private Integer recordStatus;
+
+    private Integer type;
 
     private Integer offlinePackageSize;
 

@@ -21,7 +21,7 @@ public interface AniuCcvideoDownloadStatusMapper {
 
     List<String> getAllRoomId();
 
-    void saveCcLiveVideos(List<CcLiveVideo> ccLiveVideos);
+    void saveCcLiveVideos(@Param("list")List<CcLiveVideo> list);
 
     List<LiveVideoUniqueKey> getAllLiveVideo();
 }
