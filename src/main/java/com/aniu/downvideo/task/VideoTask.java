@@ -95,9 +95,9 @@ public class VideoTask {
 
 
     // 第一次根据房间id保存数据到数据库
-    // @Scheduled(cron = "0 47 17 1 12 ?")
+    @Scheduled(cron = "0 30 22 * * ?")
     public void saveLiveVideoDownloadStatus() throws IOException {
-        LOG.info("downloadLiveVideo()下载直播视频文件start了......");
+        LOG.info("/saveLiveVideoDownloadStatus()start了......");
         downloadUtils.saveLiveVideoDownloadStatus();
     } //  TODO 第一次根据房间id保存直播回看记录到数据库  完成
 

@@ -469,7 +469,9 @@ public class DownloadUtils {
         List<CcLiveVideo> result = new ArrayList<>();
 
         Set<LiveVideoUniqueKey> savedKeys = new HashSet<>(allKeys);
+        boolean bool = CollectionUtils.isNotEmpty(savedKeys);
         Gson gson = new Gson();
+        Date now = new Date();
         for (String s : roomIdSet) {
             if (StringUtils.isBlank(s)) {
                 continue;
@@ -485,11 +487,10 @@ public class DownloadUtils {
             }
 
             LiveVideoUniqueKey liveVideoUniqueKey;
-            Date now = new Date();
             for (CcLive live : lives) {
                 String ccContentId = live.getId();
                 liveVideoUniqueKey = new LiveVideoUniqueKey(s, ccContentId);
-                if(CollectionUtils.isNotEmpty(savedKeys) && savedKeys.contains(liveVideoUniqueKey)) {
+                if(bool && savedKeys.contains(liveVideoUniqueKey)) {
                     continue;
                 }
 
