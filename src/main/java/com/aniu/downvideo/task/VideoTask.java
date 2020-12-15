@@ -58,7 +58,7 @@ public class VideoTask {
     /**
      * 保存私密课
      */
-    @Scheduled(cron="0 0 23 14 12 ?")
+    @Scheduled(cron="0 0 23 15 12 ?")
     public void savePrivateClass() throws IOException {
         LOG.info("/savePrivateClass()保存私密课数据开始了......");
         downloadUtils.savePrivateClass();
